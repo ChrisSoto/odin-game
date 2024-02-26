@@ -15,11 +15,6 @@ Player :: struct {
   
   // animations
   run: SpriteSheet,
-  run_sheet: rl.Texture2D,
-  run_frames: int,
-  run_timer: f32,
-  run_curr_frame: int,
-  run_frame_length: f32,
 }
 
 SpriteSheet :: struct {
@@ -48,24 +43,24 @@ g_mem: ^GameMemory
 
 init_player :: proc(player: ^Player) {
   player.pos = { 640, 320 }
-  player.run_sheet = rl.LoadTexture("cat_run.png")
-  player.run_frames = 4
-  run_sheet_width := f32(player.run_sheet.width)
-  run_sheet_height := f32(player.run_sheet.height)
+  player.run.texture = rl.LoadTexture("cat_run.png")
+  player.run.frames = 4
+  run_sheet_width := f32(player.run.texture.width)
+  run_sheet_height := f32(player.run.texture.height)
 
-  player.run_frame_length = 0.1
+  player.run.frame_length = 0.1
 
   player.source = {
     x = 0,
     y = 0,
-    width = run_sheet_width / f32(player.run_frames),
+    width = run_sheet_width / f32(player.run.frames),
     height = run_sheet_height,
   }
 
   player.dest = {
     x = player.pos.x,
     y = player.pos.y,
-    width = run_sheet_width * 4 / f32(player.run_frames),
+    width = run_sheet_width * 4 / f32(player.run.frames),
     height = run_sheet_height * 4,
   }
 }
@@ -96,18 +91,18 @@ update_player :: proc(player: ^Player) {
     player.grounded = true
   }
 
-  player.run_timer += rl.GetFrameTime()
+  player.run.timer += rl.GetFrameTime()
 
-  if (player.run_timer > player.run_frame_length) {
-    player.run_curr_frame += 1
-    player.run_timer = 0
+  if (player.run.timer > player.run.frame_length) {
+    player.run.current_frame += 1
+    player.run.timer = 0
 
-    if (player.run_curr_frame == player.run_frames) {
-      player.run_curr_frame = 0
+    if (player.run.current_frame == player.run.frames) {
+      player.run.current_frame = 0
     }
   }
 
-  player.source.x = f32(player.run_curr_frame) * f32(player.run_sheet.width) / f32(player.run_frames)
+  player.source.x = f32(player.run.current_frame) * f32(player.run.texture.width) / f32(player.run.frames)
 
   if (player.flip) {
     if (player.source.width > 0) {
@@ -120,7 +115,7 @@ update_player :: proc(player: ^Player) {
   player.dest.x = player.pos.x
   player.dest.y = player.pos.y
 
-  rl.DrawTexturePro(player.run_sheet, player.source, player.dest, 0, 0, rl.WHITE)
+  rl.DrawTexturePro(player.run.texture, player.source, player.dest, 0, 0, rl.WHITE)
 }
 
 
