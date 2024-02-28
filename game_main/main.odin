@@ -1,4 +1,4 @@
-package game
+package game_main
 
 import "core:c/libc"
 import "core:dynlib"
@@ -8,7 +8,7 @@ import "core:os"
 /* Contains pointers to the procedures exposed
 by the game DLL. */
 GameAPI :: struct {
-	init:         proc(),
+	init:         proc() -> rawptr,
 	init_window:  proc(),
 	update:       proc() -> bool,
 	shutdown:     proc(),
@@ -67,7 +67,7 @@ load_game_api :: proc(api_version: int) -> (GameAPI, bool) {
   inside the game DLL. Note that we manually
   cast them to the correct signatures. */
 	api := GameAPI {
-		init         = cast(proc())(dynlib.symbol_address(lib, "game_init") or_else nil),
+		init         = cast(proc() -> rawptr)(dynlib.symbol_address(lib, "game_init") or_else nil),
 		init_window  = cast(proc())(dynlib.symbol_address(lib, "game_init_window") or_else nil),
 		update       = cast(proc() -> bool)(dynlib.symbol_address(lib, "game_update") or_else nil),
 		shutdown     = cast(proc())(dynlib.symbol_address(lib, "game_shutdown") or_else nil),
