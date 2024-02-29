@@ -3,31 +3,10 @@ package game
 import "core:fmt"
 import rl "vendor:raylib"
 
-SCREEN_WIDTH :: 1280
-SCREEN_HEIGHT :: 720
+SCREEN_WIDTH :: 640
+SCREEN_HEIGHT :: 480
 
 font: rl.Font
-
-Player :: struct {
-	// state
-	pos:      rl.Vector2,
-	vel:      rl.Vector2,
-	grounded: bool,
-	flip:     bool,
-	source:   rl.Rectangle,
-	dest:     rl.Rectangle,
-
-	// animations
-	run:      SpriteSheet,
-}
-
-SpriteSheet :: struct {
-	texture:       rl.Texture2D,
-	frames:        int,
-	frame_length:  f32,
-	timer:         f32,
-	current_frame: int,
-}
 
 /* Our game's state lives within this struct. In
 order for hot reload to work the game's memory
@@ -35,11 +14,11 @@ must be transferable from one game DLL to
 another when a hot reload occurs. We can do that
 when all the game's memory live in here. */
 GameMemory :: struct {
-	player:     Player,
-	some_state: int,
+	dino:           Dino,
+	some_state:     int,
+	current_screen: Screens,
 }
 
-current_screen: Screens
 
 /* Allocates the GameMemory that we use to store
 our game's state. We assign it to a global
@@ -47,97 +26,19 @@ variable so we can use it from the other
 procedures. */
 g_mem: ^GameMemory
 
-init_player :: proc(player: ^Player) {
-	player.pos = {SCREEN_WIDTH, SCREEN_HEIGHT}
-	player.run.texture = rl.LoadTexture("cat_run.png")
-	player.run.frames = 4
-	run_sheet_width := f32(player.run.texture.width)
-	run_sheet_height := f32(player.run.texture.height)
-
-	player.run.frame_length = 0.1
-
-	player.source = {
-		x      = 0,
-		y      = 0,
-		width  = run_sheet_width / f32(player.run.frames),
-		height = run_sheet_height,
-	}
-
-	player.dest = {
-		x      = player.pos.x,
-		y      = player.pos.y,
-		width  = run_sheet_width * 4 / f32(player.run.frames),
-		height = run_sheet_height * 4,
-	}
-}
-
-update_player :: proc(player: ^Player) {
-	// moving player
-	if (rl.IsKeyDown(.LEFT)) {
-		player.vel.x = -400
-		player.flip = true
-	} else if (rl.IsKeyDown(.RIGHT)) {
-		player.vel.x = 400
-		player.flip = false
-	} else {
-		player.vel.x = 0
-	}
-
-	player.vel.y += 2000 * rl.GetFrameTime()
-
-	if (player.grounded && rl.IsKeyPressed(.SPACE)) {
-		player.vel.y = -600
-		player.grounded = false
-	}
-
-	player.pos += player.vel * rl.GetFrameTime()
-
-	if (player.pos.y > f32(rl.GetScreenHeight()) - 64) {
-		player.pos.y = f32(rl.GetScreenHeight()) - 64
-		player.grounded = true
-	}
-
-	player.run.timer += rl.GetFrameTime()
-
-	if (player.run.timer > player.run.frame_length) {
-		player.run.current_frame += 1
-		player.run.timer = 0
-
-		if (player.run.current_frame == player.run.frames) {
-			player.run.current_frame = 0
-		}
-	}
-
-	player.source.x =
-		f32(player.run.current_frame) * f32(player.run.texture.width) / f32(player.run.frames)
-
-	if (player.flip) {
-		if (player.source.width > 0) {
-			player.source.width = player.source.width * -1
-		}
-	} else {
-		player.source.width = abs(player.source.width)
-	}
-
-	player.dest.x = player.pos.x
-	player.dest.y = player.pos.y
-
-	rl.DrawTexturePro(player.run.texture, player.source, player.dest, 0, 0, rl.WHITE)
-}
-
 @(export)
 game_init :: proc() -> ^GameMemory {
 	rl.SetTargetFPS(60)
 	g_mem = new(GameMemory)
-	init_player(&g_mem.player)
-	current_screen = .TITLE
+	init_dino(&g_mem.dino)
+	g_mem.current_screen = .TITLE
 	return g_mem
 }
 
 @(export)
 game_init_window :: proc() {
 	rl.InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "My First Game")
-	font = rl.LoadFont("font/mecha.png")
+	font = rl.LoadFont("assets/font/mecha.png")
 }
 
 
@@ -149,20 +50,20 @@ game_update :: proc() -> bool {
 	rl.BeginDrawing()
 	rl.ClearBackground(rl.BLUE)
 
-	switch current_screen {
+	switch g_mem.current_screen {
 	case .TITLE:
-		update_title_screen()
-		if exit_title_screen() == 1 {
-			go_to_screen(.GAMEPLAY)
+		InitTitleScreen()
+		if ExitTitleScreen() == 1 {
+			GoToScreen(.GAMEPLAY)
+		} else if (ExitTitleScreen() == 2) {
+			return false
 		}
-		draw_title_screen()
+		UpdateTitleScreen()
 	case .GAMEPLAY:
-		udpate_game_play()
+		UpdateGamePlay(&g_mem.dino)
 	case .OPTIONS:
-		udpate_options_screen()
+		UpdateOptionsScreen()
 	}
-
-	// update_player(&g_mem.player)
 
 	rl.EndDrawing()
 	// g_mem.some_state += 1
