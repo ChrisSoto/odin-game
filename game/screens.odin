@@ -68,8 +68,8 @@ ExitTitleScreen :: proc() -> int {
 	return exit_screen
 }
 
-UpdateGamePlay :: proc(dino: ^Dino) {
-	update_dino(dino)
+UpdateGamePlay :: proc(player: ^Player) {
+	UpdatePlayer(player)
 }
 
 UpdateOptionsScreen :: proc() {}

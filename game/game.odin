@@ -14,7 +14,7 @@ must be transferable from one game DLL to
 another when a hot reload occurs. We can do that
 when all the game's memory live in here. */
 GameMemory :: struct {
-	dino:           Dino,
+	player:         Player,
 	some_state:     int,
 	current_screen: Screens,
 }
@@ -30,7 +30,7 @@ g_mem: ^GameMemory
 game_init :: proc() -> ^GameMemory {
 	rl.SetTargetFPS(60)
 	g_mem = new(GameMemory)
-	init_dino(&g_mem.dino)
+	InitMike(&g_mem.player)
 	g_mem.current_screen = .TITLE
 	return g_mem
 }
@@ -60,7 +60,7 @@ game_update :: proc() -> bool {
 		}
 		UpdateTitleScreen()
 	case .GAMEPLAY:
-		UpdateGamePlay(&g_mem.dino)
+		UpdateGamePlay(&g_mem.player)
 	case .OPTIONS:
 		UpdateOptionsScreen()
 	}
